@@ -1,5 +1,5 @@
 """
-Django settings for the DJ Chemboi backend (config project).
+Django settings for the DJ Chemboi backend.
 """
 
 from datetime import timedelta
@@ -7,33 +7,59 @@ from pathlib import Path
 
 import environ
 
+
+# --------------------------------------------------------------------------------------
+# Base configuration
+# --------------------------------------------------------------------------------------
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
     DEBUG=(bool, True),
 )
+
 environ.Env.read_env(BASE_DIR / ".env")
 
-SECRET_KEY = env("SECRET_KEY", default="django-insecure-change-me-in-production")
+
+SECRET_KEY = env(
+    "SECRET_KEY",
+    default="django-insecure-change-me-in-production",
+)
+
 DEBUG = env.bool("DEBUG", default=True)
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=[
+        "localhost",
+        "127.0.0.1",
+        "djgang-backend.onrender.com",
+        "djgang.wtf",
+        "www.djgang.wtf",
+    ],
+)
+
 
 # --------------------------------------------------------------------------------------
 # Applications
 # --------------------------------------------------------------------------------------
+
 INSTALLED_APPS = [
+    # Django applications
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # 3rd party
+
+    # Third-party applications
     "rest_framework",
     "rest_framework_simplejwt",
     "corsheaders",
     "django_filters",
-    # local apps
+
+    # Local applications
     "accounts",
     "catalog",
     "cart",
@@ -44,12 +70,23 @@ INSTALLED_APPS = [
     "music",
 ]
 
+
 AUTH_USER_MODEL = "accounts.User"
+
+
+# --------------------------------------------------------------------------------------
+# Middleware
+# --------------------------------------------------------------------------------------
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+
+    # WhiteNoise must come immediately after SecurityMiddleware
     "whitenoise.middleware.WhiteNoiseMiddleware",
+
+    # CORS middleware should appear before CommonMiddleware
     "corsheaders.middleware.CorsMiddleware",
+
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -58,13 +95,24 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
 ROOT_URLCONF = "config.urls"
+
+
+# --------------------------------------------------------------------------------------
+# Templates
+# --------------------------------------------------------------------------------------
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "config" / "templates"],
+
+        "DIRS": [
+            BASE_DIR / "config" / "templates",
+        ],
+
         "APP_DIRS": True,
+
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -76,12 +124,17 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = "config.wsgi.application"
 
+
 # --------------------------------------------------------------------------------------
-# Database (PostgreSQL). Falls back to SQLite automatically if DATABASE_URL isn't set,
-# so the project still runs out of the box for a quick local check.
+# Database
 # --------------------------------------------------------------------------------------
+# Uses PostgreSQL when DATABASE_URL is available.
+# Falls back to SQLite for local development.
+# --------------------------------------------------------------------------------------
+
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
@@ -89,68 +142,221 @@ DATABASES = {
     )
 }
 
+
+# Keep database connections open for better production performance
+if not DEBUG:
+    DATABASES["default"]["CONN_MAX_AGE"] = 600
+
+
+# --------------------------------------------------------------------------------------
+# Password validation
+# --------------------------------------------------------------------------------------
+
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "MinimumLengthValidator"
+        ),
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "CommonPasswordValidator"
+        ),
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator"
+        ),
+    },
 ]
 
+
+# --------------------------------------------------------------------------------------
+# Internationalization
+# --------------------------------------------------------------------------------------
+
 LANGUAGE_CODE = "en-us"
+
 TIME_ZONE = "Asia/Kolkata"
+
 USE_I18N = True
+
 USE_TZ = True
 
+
 # --------------------------------------------------------------------------------------
-# Static & media
+# Static files
 # --------------------------------------------------------------------------------------
-STATIC_URL = "static/"
+
+STATIC_URL = "/static/"
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-MEDIA_URL = "media/"
+STATICFILES_DIRS = []
+
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage."
+            "CompressedManifestStaticFilesStorage"
+        ),
+    },
+}
+
+
+# --------------------------------------------------------------------------------------
+# Media files
+# --------------------------------------------------------------------------------------
+
+MEDIA_URL = "/media/"
+
 MEDIA_ROOT = BASE_DIR / "media"
+
+
+# --------------------------------------------------------------------------------------
+# Default primary key
+# --------------------------------------------------------------------------------------
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
 # --------------------------------------------------------------------------------------
-# DRF + JWT
+# Django REST Framework
 # --------------------------------------------------------------------------------------
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
+
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ),
+
+    "DEFAULT_PAGINATION_CLASS": (
+        "rest_framework.pagination.PageNumberPagination"
+    ),
+
     "PAGE_SIZE": 20,
 }
+
+
+# --------------------------------------------------------------------------------------
+# JWT configuration
+# --------------------------------------------------------------------------------------
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
-    "AUTH_HEADER_TYPES": ("Bearer",),
+
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
+
+    "AUTH_HEADER_TYPES": (
+        "Bearer",
+    ),
+
     "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
 }
 
-# --------------------------------------------------------------------------------------
-# CORS - allow the React dev server (and your deployed frontend domain) to call the API
-# --------------------------------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = env.list(
-    "CORS_ALLOWED_ORIGINS",
-    default=["http://localhost:5173", "http://127.0.0.1:5173"],
-)
-CORS_ALLOW_CREDENTIALS = True
 
 # --------------------------------------------------------------------------------------
-# Razorpay (placeholder) - fill these in .env once you have live/test keys
+# CORS configuration
 # --------------------------------------------------------------------------------------
-RAZORPAY_KEY_ID = env("RAZORPAY_KEY_ID", default="")
-RAZORPAY_KEY_SECRET = env("RAZORPAY_KEY_SECRET", default="")
+
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://djgang.wtf",
+        "https://www.djgang.wtf",
+    ],
+)
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_ALL_ORIGINS = False
+
+
+# --------------------------------------------------------------------------------------
+# CSRF configuration
+# --------------------------------------------------------------------------------------
+
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=[
+        "https://djgang-backend.onrender.com",
+        "https://djgang.wtf",
+        "https://www.djgang.wtf",
+    ],
+)
+
+
+# --------------------------------------------------------------------------------------
+# Production security settings
+# --------------------------------------------------------------------------------------
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = (
+        "HTTP_X_FORWARDED_PROTO",
+        "https",
+    )
+
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    SECURE_SSL_REDIRECT = True
+
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+    X_FRAME_OPTIONS = "DENY"
+
+
+# --------------------------------------------------------------------------------------
+# Razorpay
+# --------------------------------------------------------------------------------------
+
+RAZORPAY_KEY_ID = env(
+    "RAZORPAY_KEY_ID",
+    default="",
+)
+
+RAZORPAY_KEY_SECRET = env(
+    "RAZORPAY_KEY_SECRET",
+    default="",
+)
+
 
 # --------------------------------------------------------------------------------------
 # Admin branding
 # --------------------------------------------------------------------------------------
+
 ADMIN_SITE_HEADER = "DJ Chemboi Control Room"
+
+ADMIN_SITE_TITLE = "DJ Chemboi Admin"
+
+ADMIN_INDEX_TITLE = "Manage DJ Chemboi Website"
