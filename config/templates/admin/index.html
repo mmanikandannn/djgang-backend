@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{% block extrastyle %}{{ block.super }}<style>
+.dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin:0 0 24px}.metric{background:#111827;border:1px solid #273244;border-radius:14px;padding:18px;color:#fff}.metric small{color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}.metric strong{display:block;font-size:28px;margin-top:7px}.metric a{color:#67e8f9}.admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}.admin-actions a{background:#06b6d4;color:#061018!important;padding:10px 14px;border-radius:9px;font-weight:700}.admin-actions a.secondary{background:#7c3aed;color:white!important}.panel{background:#fff;border:1px solid #d8dee8;border-radius:12px;padding:18px;margin-bottom:20px}.panel h2{margin-top:0}.recent-table{width:100%;border-collapse:collapse}.recent-table th,.recent-table td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:left}@media(max-width:700px){.recent-table{font-size:12px}}
+</style>{% endblock %}
+{% block content %}
+<div class="admin-actions"><a href="{% url 'admin-analytics' %}">View analytics</a><a class="secondary" href="{% url 'admin-management' %}">Management panel</a><a href="{% url 'admin:catalog_product_add' %}">Add product</a><a href="{% url 'admin:events_app_event_add' %}">Create event</a><a href="{% url 'admin:music_track_add' %}">Add track</a></div>
+<div class="dashboard-grid">
+<div class="metric"><small>Users</small><strong>{{ total_users }}</strong><span>{{ new_users }} new in 30 days</span></div>
+<div class="metric"><small>Bookings</small><strong>{{ total_bookings }}</strong><span>{{ pending_bookings }} new</span></div>
+<div class="metric"><small>Revenue</small><strong>₹{{ revenue|floatformat:2 }}</strong><span>{{ paid_orders }} paid orders</span></div>
+<div class="metric"><small>Orders</small><strong>{{ total_orders }}</strong><span>{{ pending_orders }} pending</span></div>
+<div class="metric"><small>Products</small><strong>{{ products }}</strong><span>{{ low_stock }} low stock</span></div>
+<div class="metric"><small>Content</small><strong>{{ tracks|add:gallery_items|add:events }}</strong><span>tracks, gallery and events</span></div>
+</div>
+<div class="panel"><h2>Recent bookings</h2><table class="recent-table"><tr><th>Name</th><th>Type</th><th>Date</th><th>Status</th></tr>{% for item in recent_bookings %}<tr><td><a href="{% url 'admin:bookings_bookingenquiry_change' item.pk %}">{{ item.name }}</a></td><td>{{ item.get_event_type_display }}</td><td>{{ item.event_date|default:"—" }}</td><td>{{ item.get_status_display }}</td></tr>{% empty %}<tr><td colspan="4">No bookings yet.</td></tr>{% endfor %}</table></div>
+<div class="panel"><h2>Upcoming events</h2><table class="recent-table"><tr><th>Event</th><th>Venue</th><th>Date</th><th>Status</th></tr>{% for item in next_events %}<tr><td><a href="{% url 'admin:events_app_event_change' item.pk %}">{{ item.title }}</a></td><td>{{ item.venue }}, {{ item.city }}</td><td>{{ item.date }}</td><td>{{ item.get_status_display }}</td></tr>{% empty %}<tr><td colspan="4">No upcoming events.</td></tr>{% endfor %}</table></div>
+{{ block.super }}
+{% endblock %}
