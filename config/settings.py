@@ -48,9 +48,6 @@ ALLOWED_HOSTS = env.list(
 # ==============================================================================
 
 INSTALLED_APPS = [
-    # Cloudinary storage should load before staticfiles.
-    "cloudinary_storage",
-
     # Django applications
     "django.contrib.admin",
     "django.contrib.auth",
@@ -60,6 +57,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     # Cloudinary
+    # Keep this after django.contrib.staticfiles so Django's normal
+    # collectstatic command is used.
+    "cloudinary_storage",
     "cloudinary",
 
     # Third-party applications
@@ -237,12 +237,12 @@ CLOUDINARY_STORAGE = {
 # ==============================================================================
 
 STORAGES = {
-    # Product, gallery and other uploaded images are stored in Cloudinary.
+    # Product, gallery and other uploaded files are stored in Cloudinary.
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
 
-    # CSS, JavaScript and Django Admin static files are handled by WhiteNoise.
+    # Django Admin, CSS and JavaScript static files use WhiteNoise.
     "staticfiles": {
         "BACKEND": (
             "whitenoise.storage."
@@ -251,6 +251,11 @@ STORAGES = {
     },
 }
 
+# Compatibility setting required by django-cloudinary-storage 0.3.0.
+# The package's collectstatic command still checks this legacy setting.
+STATICFILES_STORAGE = (
+    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
 
 # ==============================================================================
 # Media files
